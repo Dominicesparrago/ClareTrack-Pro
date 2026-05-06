@@ -94,16 +94,33 @@
     </div>
 
     <!-- Users Panel -->
-    <div id="panel-users" class="panel">
+    <div id="panel-users" class="panel panel-users-layout">
       <div class="page-title-row">
         <h2><i class="fa-solid fa-users" style="margin-right:8px;color:var(--accent);"></i>Users</h2>
         <button class="btn btn-primary" onclick="openUserModal()">
           <i class="fa-solid fa-plus"></i> Add Professor / Admin
         </button>
       </div>
-      <div class="card" style="padding:0;">
-        <div class="table-wrap" id="users-table-wrap">
-          <div class="loading-center"><div class="spinner"></div></div>
+      <div class="users-split">
+        <div class="card users-split-card" style="padding:0;">
+          <div class="users-split-header">
+            <i class="fa-solid fa-chalkboard-user" style="color:var(--accent);margin-right:8px;"></i>
+            <span style="font-weight:600;font-size:14px;">Administrators &amp; Professors</span>
+            <span class="badge badge-pending" id="staff-count-badge" style="margin-left:auto;"></span>
+          </div>
+          <div class="table-wrap users-split-body" id="staff-table-wrap">
+            <div class="loading-center"><div class="spinner"></div></div>
+          </div>
+        </div>
+        <div class="card users-split-card" style="padding:0;">
+          <div class="users-split-header">
+            <i class="fa-solid fa-user-graduate" style="color:var(--accent);margin-right:8px;"></i>
+            <span style="font-weight:600;font-size:14px;">Students</span>
+            <span class="badge badge-pending" id="student-count-badge" style="margin-left:auto;"></span>
+          </div>
+          <div class="table-wrap users-split-body" id="students-table-wrap">
+            <div class="loading-center"><div class="spinner"></div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -192,11 +209,11 @@
     <!-- Export Panel -->
     <div id="panel-export" class="panel">
       <div class="page-title-row">
-        <h2><i class="fa-solid fa-file-arrow-down" style="margin-right:8px;color:var(--accent);"></i>Export Attendance CSV</h2>
+        <h2><i class="fa-solid fa-file-arrow-down" style="margin-right:8px;color:var(--accent);"></i>Export Attendance</h2>
       </div>
       <div class="card" style="max-width:480px;">
         <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px;">
-          Select a session to download its full attendance record as a CSV file.
+          Select a session and download its full attendance record as CSV or Excel.
         </p>
         <div class="form-group">
           <label class="form-label" for="export-session-select">
@@ -206,9 +223,14 @@
             <option value="">— Choose a session —</option>
           </select>
         </div>
-        <button class="btn btn-primary btn-block" onclick="downloadExport()">
-          <i class="fa-solid fa-file-arrow-down"></i> Download CSV
-        </button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button class="btn btn-primary" onclick="downloadExport('csv')">
+            <i class="fa-solid fa-file-csv"></i> Download CSV
+          </button>
+          <button class="btn btn-success" onclick="downloadExport('xlsx')">
+            <i class="fa-solid fa-file-excel"></i> Download Excel
+          </button>
+        </div>
         <div id="export-error" class="form-error" hidden></div>
       </div>
     </div>

@@ -15,6 +15,19 @@ function initSocket(httpServer) {
       return;
     }
 
+    // Every user joins their own private room for targeted messages
+    socket.join(`user_${session.userId}`);
+
+    // Teachers auto-join all their section rooms so they get join_request_new events
+    if (session.role === 'TEACHER') {
+      const teacherSections = db.prepare(`
+        SELECT sec.id FROM sections sec
+        JOIN subjects sub ON sub.id = sec.subject_id
+        WHERE sub.teacher_id = ?
+      `).all(session.userId);
+      teacherSections.forEach(sec => socket.join(`section_${sec.id}`));
+    }
+
     socket.on('join_section', (sectionId) => {
       const sid = parseInt(sectionId);
       if (!sid || isNaN(sid)) return;
@@ -81,7 +94,7 @@ function autoMarkExpired(io) {
 
   const insertAudit = db.prepare(`
     INSERT INTO audit_logs (session_id, actor_id, action, created_at)
-    VALUES (?, 1, 'AUTO_MARKED_ABSENT', ?)
+    VALUES (?, NULL, 'AUTO_MARKED_ABSENT', ?)
   `);
 
   const transaction = db.transaction((sessions) => {

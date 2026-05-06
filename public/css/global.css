@@ -312,6 +312,16 @@ ul, ol { list-style: none; }
 .stat-icon.green { background: var(--status-present-bg);  color: var(--status-present-text); }
 .stat-icon.red   { background: var(--status-absent-bg);   color: var(--status-absent-text); }
 .stat-icon.amber { background: rgba(251,191,36,0.12);     color: var(--amber-400); }
+/* Aliases used by student dashboard stat cards */
+.stat-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px; }
+.stat-value { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; color: var(--text-primary); line-height: 1; }
+.rate-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.rate-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
+.rate-bar-fill.green  { background: var(--status-present-text); }
+.rate-bar-fill.red    { background: var(--status-absent-text); }
+.rate-bar-fill.high   { background: var(--status-present-text); }
+.rate-bar-fill.medium { background: #f39c12; }
+.rate-bar-fill.low    { background: var(--status-absent-text); }
 
 /* ── Section tabs ── */
 .section-tabs { display: flex; gap: 4px; background: var(--bg-elevated); padding: 4px; border-radius: var(--radius); margin-bottom: 20px; flex-wrap: wrap; }

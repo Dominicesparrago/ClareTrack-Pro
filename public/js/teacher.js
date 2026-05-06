@@ -45,11 +45,13 @@ async function init() {
   document.getElementById('nav-avatar').textContent = getInitials(currentUser.name);
 
   const socket = initSocket();
-  socket.on('attendance_update', onAttendanceUpdate);
-  socket.on('session_finalized', onSessionFinalized);
-  socket.on('session_expired',   onSessionExpired);
+  socket.on('attendance_update',  onAttendanceUpdate);
+  socket.on('session_finalized',  onSessionFinalized);
+  socket.on('session_expired',    onSessionExpired);
+  socket.on('join_request_new',   onJoinRequestNew);
 
   await loadTodaySubjects();
+  API.get('/teacher/join-requests').then(r => updateRequestsBadge(r.length)).catch(() => {});
 
   document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
   document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
@@ -57,7 +59,7 @@ async function init() {
 
 /* ── PANEL SWITCHING ── */
 function switchPanel(name) {
-  const panels = ['today', 'all', 'students', 'history'];
+  const panels = ['today', 'all', 'students', 'history', 'requests'];
   panels.forEach(p => {
     const el = document.getElementById(`panel-${p}`);
     if (el) el.classList.toggle('hidden', p !== name);
@@ -70,7 +72,8 @@ function switchPanel(name) {
     today:    "Today's Classes",
     all:      'All Subjects',
     students: 'Students',
-    history:  'Session History'
+    history:  'Session History',
+    requests: 'Join Requests'
   };
   document.getElementById('topnav-title').textContent = titles[name] || 'Professor Dashboard';
 
@@ -78,6 +81,7 @@ function switchPanel(name) {
   if (name === 'all')      loadAllSubjects();
   if (name === 'students') loadStudentsPanel();
   if (name === 'history')  loadSessionHistory();
+  if (name === 'requests') loadJoinRequests();
 }
 
 /* ══════════════════════════════
@@ -163,8 +167,8 @@ function renderSubjectCards(subjects, container, readOnly = false) {
       }
 
       return readOnly ? '' : `
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
             <span style="font-size:12px;color:var(--text-muted);">
               <i class="fa-solid fa-layer-group" style="margin-right:4px;"></i>${escapeHtml(sec.name)}
               &bull; <span style="font-family:var(--font-mono);letter-spacing:0.1em;">${sec.join_code}</span>
@@ -207,15 +211,57 @@ async function loadAllSubjects() {
       list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-book"></i><div class="empty-state__title">No Subjects Assigned</div></div>`;
       return;
     }
-    const wrapped = subjects.map(s => ({ ...s, sections: [] }));
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;';
     list.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'sections-grid';
     list.appendChild(grid);
-    renderSubjectCards(wrapped, grid, true);
+    renderAllSubjectCards(subjects, grid);
   } catch {
     list.innerHTML = `<div class="empty-state"><div class="empty-state__text" style="color:var(--status-absent-text)">Failed to load subjects.</div></div>`;
   }
+}
+
+function renderAllSubjectCards(subjects, container) {
+  container.innerHTML = subjects.map(sub => {
+    const sectionBlocks = sub.sections && sub.sections.length
+      ? sub.sections.map(sec => `
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:12px;color:var(--text-muted);">
+              <i class="fa-solid fa-layer-group" style="margin-right:4px;"></i>${escapeHtml(sec.name)}
+              &bull; <span style="font-family:var(--font-mono);letter-spacing:0.1em;">${sec.join_code}</span>
+            </span>
+            <span class="badge badge-pending">
+              <i class="fa-solid fa-users"></i> ${sec.enrolled_count} enrolled
+            </span>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="viewSectionStudents(${sub.id}, ${sec.id})">
+            <i class="fa-solid fa-users"></i> View Students
+          </button>
+        </div>`).join('')
+      : `<div style="margin-top:12px;font-size:13px;color:var(--text-muted);">No sections yet.</div>`;
+
+    return `
+      <div class="subject-card">
+        <div class="subject-card__code">${escapeHtml(sub.code)}</div>
+        <div class="subject-card__name">${escapeHtml(sub.name)}</div>
+        <div class="subject-card__meta">
+          <i class="fa-solid fa-clock" style="opacity:.6;margin-right:4px;"></i>${formatTime(sub.time_start)} – ${formatTime(sub.time_end)}
+          &nbsp;&bull;&nbsp;
+          <i class="fa-solid fa-calendar-days" style="opacity:.6;margin-right:4px;"></i>${formatDays(sub.days)}
+        </div>
+        ${sectionBlocks}
+      </div>`;
+  }).join('');
+}
+
+async function viewSectionStudents(subjectId, sectionId) {
+  switchPanel('students');
+  await new Promise(r => setTimeout(r, 50));
+  const subSel = document.getElementById('students-subject-filter');
+  if (subSel) { subSel.value = subjectId; await onStudentFilterChange(); }
+  const secSel = document.getElementById('students-section-filter');
+  if (secSel) { secSel.value = sectionId; await loadStudentsPanel(); }
 }
 
 /* ══════════════════════════════
@@ -637,8 +683,11 @@ async function loadSessionHistory() {
           <button class="btn btn-ghost btn-sm" onclick="viewHistoryRoster(${s.id}, '${escapeHtml(s.subject_code)} ${escapeHtml(s.section_name)}')">
             <i class="fa-solid fa-clipboard-list"></i>
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="exportSessionCSV(${s.id})" title="Export CSV">
-            <i class="fa-solid fa-file-arrow-down"></i>
+          <button class="btn btn-ghost btn-sm" onclick="exportSession(${s.id},'csv')" title="Export CSV">
+            <i class="fa-solid fa-file-csv"></i>
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="exportSession(${s.id},'xlsx')" title="Export Excel">
+            <i class="fa-solid fa-file-excel"></i>
           </button>
         </td>
       </tr>`;
@@ -692,8 +741,9 @@ async function viewHistoryRoster(sessionId, title) {
   }
 }
 
-function exportSessionCSV(sessionId) {
-  window.location.href = `/api/admin/export/${sessionId}`;
+function exportSession(sessionId, format) {
+  const suffix = format === 'xlsx' ? '/xlsx' : '';
+  window.location.href = `/api/teacher/export/${sessionId}${suffix}`;
 }
 
 /* ══════════════════════════════
@@ -839,6 +889,80 @@ function toggleSidebar() {
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+/* ══════════════════════════════
+   JOIN REQUESTS
+══════════════════════════════ */
+async function loadJoinRequests() {
+  const list = document.getElementById('requests-list');
+  list.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  try {
+    const requests = await API.get('/teacher/join-requests');
+    updateRequestsBadge(requests.length);
+    if (!requests.length) {
+      list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-user-check"></i><div class="empty-state__title">No Pending Requests</div><div class="empty-state__text">No students are waiting for approval.</div></div>`;
+      return;
+    }
+    list.innerHTML = requests.map(r => `
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-weight:600;font-size:15px;margin-bottom:2px;">${escapeHtml(r.student_name)}</div>
+            <div style="font-size:12px;color:var(--text-muted);">${escapeHtml(r.student_email)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:var(--font-display);font-weight:700;font-size:14px;">${escapeHtml(r.subject_code)}</div>
+            <div style="font-size:12px;color:var(--text-muted);">${escapeHtml(r.section_name)}</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px;margin-bottom:14px;">
+          <i class="fa-solid fa-clock" style="margin-right:4px;"></i>${new Date(r.created_at).toLocaleString('en-PH')}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-success btn-sm" onclick="respondRequest(${r.id}, true)">
+            <i class="fa-solid fa-circle-check"></i> Accept
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="respondRequest(${r.id}, false)">
+            <i class="fa-solid fa-circle-xmark"></i> Reject
+          </button>
+        </div>
+      </div>`).join('');
+  } catch {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state__text" style="color:var(--status-absent-text)">Failed to load requests.</div></div>`;
+  }
+}
+
+async function respondRequest(requestId, accept) {
+  const endpoint = accept ? 'accept' : 'reject';
+  try {
+    await API.post(`/teacher/join-requests/${requestId}/${endpoint}`);
+    toast(accept ? 'Student enrolled successfully.' : 'Request rejected.', accept ? 'success' : 'info');
+    loadJoinRequests();
+  } catch (err) {
+    toast(err.data?.error || 'Action failed.', 'error');
+  }
+}
+
+function updateRequestsBadge(count) {
+  const badge = document.getElementById('requests-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function onJoinRequestNew(data) {
+  toast(`Join request from ${data.studentName} for ${data.subjectCode} — ${data.sectionName}`, 'info', 6000);
+  // Refresh badge count
+  API.get('/teacher/join-requests').then(r => updateRequestsBadge(r.length)).catch(() => {});
+  // Refresh list if currently on the requests panel
+  if (!document.getElementById('panel-requests').classList.contains('hidden')) {
+    loadJoinRequests();
+  }
 }
 
 init();

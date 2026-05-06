@@ -30,6 +30,7 @@ function formatWeekLabel(weekStart) {
 }
 
 function isScheduledOn(days, calIdx) { // calIdx 0=Mon..4=Fri
+  if (!days) return false;
   return days.split(',').map(d => d.trim()).includes(CAL_ABBREVS[calIdx]);
 }
 
@@ -99,6 +100,7 @@ async function init() {
   socket.on('session_finalized',  onSessionFinalized);
   socket.on('session_expired',    onSessionExpired);
   socket.on('attendance_update',  onAttendanceUpdate);
+  socket.on('join_response',      onJoinResponse);
 
   await loadSections();
 
@@ -198,10 +200,11 @@ async function loadSections() {
     /* Populate history filter */
     populateHistoryFilter(data);
 
-  } catch {
+  } catch (err) {
+    console.error('loadSections failed:', err);
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
       <i class="fa-solid fa-triangle-exclamation"></i>
-      <div class="empty-state__text" style="color:var(--status-absent-text)">Failed to load sections.</div>
+      <div class="empty-state__text" style="color:var(--status-absent-text)">Failed to load sections (${err?.status ?? err?.message ?? 'unknown'}).</div>
     </div>`;
   }
 }
@@ -308,10 +311,8 @@ function buildSectionCard(sec, activeSession, myRecord) {
         &nbsp;·&nbsp; ${escapeHtml(sec.section_name)}
       </div>
       ${joinCodeHtml}
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
-        <span></span>${statusBadge}
-      </div>
-      <div class="section-card__actions" style="margin-top:8px;">${btnHtml}</div>
+      ${statusBadge ? `<div style="display:flex;align-items:center;justify-content:flex-end;">${statusBadge}</div>` : ''}
+      <div class="section-card__actions">${btnHtml}</div>
     </div>`;
 }
 
@@ -324,8 +325,8 @@ function toggleJoinCode(sectionId) {
   dots.style.display = shown ? '' : 'none';
   val.classList.toggle('show', !shown);
   eye.innerHTML = shown
-    ? '<i class="fa-solid fa-eye"></i>'
-    : '<i class="fa-solid fa-eye-slash"></i>';
+    ? '<i class="fa-solid fa-eye-slash"></i>'
+    : '<i class="fa-solid fa-eye"></i>';
 }
 
 function populateHistoryFilter(sections) {
@@ -380,13 +381,58 @@ async function joinSection_() {
   }
 
   try {
-    await API.post('/student/join', { joinCode: code });
-    toast('Successfully enrolled in section!', 'success');
-    document.getElementById('join-code-input').value = '';
-    await loadSections();
+    const section = await API.get(`/student/join-preview?code=${code}`);
+    const DAY_MAP = { MON:'Mon', TUE:'Tue', WED:'Wed', THU:'Thu', FRI:'Fri', SAT:'Sat', SUN:'Sun' };
+    const formatTime = t => { if (!t) return ''; const [h,m] = t.split(':'); const hr=parseInt(h); return `${hr%12||12}:${m} ${hr>=12?'PM':'AM'}`; };
+    const formatDays = d => d.split(',').map(x => DAY_MAP[x.trim()]||x).join(', ');
+
+    document.getElementById('jc-subject-code').textContent = section.subject_code;
+    document.getElementById('jc-subject-name').textContent = section.subject_name;
+    document.getElementById('jc-join-code').textContent    = section.join_code;
+    document.getElementById('jc-professor').textContent    = section.professor_name;
+    document.getElementById('jc-section').textContent      = section.section_name;
+    document.getElementById('jc-time').textContent         = `${formatTime(section.time_start)} – ${formatTime(section.time_end)}`;
+    document.getElementById('jc-days').textContent         = formatDays(section.days);
+    document.getElementById('jc-enrolled').textContent     = section.enrolled_count;
+    document.getElementById('join-confirm-error').hidden   = true;
+    document.getElementById('join-confirm-btn').dataset.code = code;
+    document.getElementById('join-confirm-modal').classList.add('open');
   } catch (err) {
     errEl.textContent = err.data?.error || 'Invalid or unknown join code.';
     errEl.hidden = false;
+  }
+}
+
+async function confirmJoin() {
+  const code    = document.getElementById('join-confirm-btn').dataset.code;
+  const errEl   = document.getElementById('join-confirm-error');
+  const btn     = document.getElementById('join-confirm-btn');
+  errEl.hidden  = true;
+  btn.disabled  = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending…';
+
+  try {
+    await API.post('/student/join', { joinCode: code });
+    // Server returns 202 — request pending teacher approval
+    document.getElementById('join-confirm-modal').classList.remove('open');
+    document.getElementById('join-code-input').value = '';
+    toast('Request sent! Waiting for professor approval.', 'info', 6000);
+  } catch (err) {
+    errEl.textContent = err.data?.error || 'Request failed.';
+    errEl.hidden = false;
+  } finally {
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="fa-solid fa-door-open"></i> Enroll Now';
+  }
+}
+
+function onJoinResponse(data) {
+  if (data.accepted) {
+    toast(`Enrolled in ${data.subjectCode} — ${data.sectionName}!`, 'success', 6000);
+    loadSections();
+  } else {
+    const reason = data.reason ? ` Reason: ${data.reason}` : '';
+    toast(`Request for ${data.subjectCode} — ${data.sectionName} was rejected.${reason}`, 'error', 7000);
   }
 }
 

@@ -72,10 +72,20 @@ db.exec(`
     UNIQUE(session_id, student_id)
   );
 
+  CREATE TABLE IF NOT EXISTS join_requests (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    section_id   INTEGER NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
+    status       TEXT    NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING','ACCEPTED','REJECTED')),
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+    responded_at TEXT,
+    responded_by INTEGER REFERENCES users(id)
+  );
+
   CREATE TABLE IF NOT EXISTS audit_logs (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id  INTEGER REFERENCES attendance_sessions(id),
-    actor_id    INTEGER NOT NULL REFERENCES users(id),
+    actor_id    INTEGER REFERENCES users(id),
     student_id  INTEGER REFERENCES users(id),
     action      TEXT    NOT NULL,
     reason      TEXT,

@@ -94,30 +94,43 @@ async function loadOverview() {
 }
 
 // ===== USERS =====
+function renderUserTable(users, containerId, badgeId) {
+  const wrap = document.getElementById(containerId);
+  const badge = document.getElementById(badgeId);
+  if (badge) badge.textContent = users.length;
+  if (!users.length) { wrap.innerHTML = '<p class="table-empty">None yet.</p>'; return; }
+  const roleLabel = r => r === 'TEACHER' ? 'Professor' : r.charAt(0) + r.slice(1).toLowerCase();
+  const rows = users.map(u => `
+    <tr>
+      <td>${escapeHtml(u.name)}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(u.email)}</td>
+      <td><span class="badge badge--${u.role.toLowerCase()}">${roleLabel(u.role)}</span></td>
+      <td style="font-size:12px;color:var(--text-muted);">${new Date(u.created_at).toLocaleDateString('en-PH')}</td>
+      <td>
+        <button class="btn btn--ghost btn--sm" onclick="openUserModal(${JSON.stringify(u).replace(/"/g,'&quot;')})">Edit</button>
+        ${u.id !== currentUser?.id ? `<button class="btn btn--danger btn--sm" style="margin-left:4px;" onclick="deleteUser(${u.id},'${escapeHtml(u.name)}')">Delete</button>` : ''}
+      </td>
+    </tr>`).join('');
+  wrap.innerHTML = `
+    <table class="table-clean">
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
 async function loadUsers() {
-  const wrap = document.getElementById('users-table-wrap');
-  wrap.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  document.getElementById('staff-table-wrap').innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  document.getElementById('students-table-wrap').innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
   try {
     const users = await API.get('/admin/users');
-    if (!users.length) { wrap.innerHTML = '<p class="table-empty">No users found.</p>'; return; }
-    const roleLabel = r => r === 'TEACHER' ? 'Professor' : r;
-    const rows = users.map(u => `
-      <tr>
-        <td>${escapeHtml(u.name)}</td>
-        <td>${escapeHtml(u.email)}</td>
-        <td><span class="badge badge--${u.role.toLowerCase()}">${roleLabel(u.role)}</span></td>
-        <td>${new Date(u.created_at).toLocaleDateString('en-PH')}</td>
-        <td>
-          <button class="btn btn--ghost btn--sm" onclick="openUserModal(${JSON.stringify(u).replace(/"/g,'&quot;')})">Edit</button>
-          ${u.id !== currentUser.id ? `<button class="btn btn--danger btn--sm" style="margin-left:4px;" onclick="deleteUser(${u.id},'${escapeHtml(u.name)}')">Delete</button>` : ''}
-        </td>
-      </tr>`).join('');
-    wrap.innerHTML = `
-      <table class="table-clean">
-        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`;
-  } catch { wrap.innerHTML = '<p class="table-empty" style="color:var(--color-danger);">Failed to load users.</p>'; }
+    const staff    = users.filter(u => u.role === 'ADMIN' || u.role === 'TEACHER');
+    const students = users.filter(u => u.role === 'STUDENT');
+    renderUserTable(staff,    'staff-table-wrap',    'staff-count-badge');
+    renderUserTable(students, 'students-table-wrap', 'student-count-badge');
+  } catch {
+    document.getElementById('staff-table-wrap').innerHTML    = '<p class="table-empty" style="color:var(--color-danger);">Failed to load.</p>';
+    document.getElementById('students-table-wrap').innerHTML = '<p class="table-empty" style="color:var(--color-danger);">Failed to load.</p>';
+  }
 }
 
 function openUserModal(user = null) {
@@ -543,12 +556,13 @@ async function loadExport() {
   } catch { select.innerHTML = '<option value="">Failed to load sessions</option>'; }
 }
 
-function downloadExport() {
+function downloadExport(format = 'csv') {
   const sessionId = document.getElementById('export-session-select').value;
   const errEl = document.getElementById('export-error');
   errEl.hidden = true;
   if (!sessionId) { errEl.textContent = 'Please select a session.'; errEl.hidden = false; return; }
-  API.downloadCSV(sessionId);
+  if (format === 'xlsx') API.downloadExcel(sessionId);
+  else API.downloadCSV(sessionId);
 }
 
 // ===== MODAL HELPERS =====

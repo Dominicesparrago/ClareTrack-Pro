@@ -22,11 +22,28 @@
     </div>
     <p class="auth-brand-tagline">Real-time attendance,<br>redefined.</p>
     <p class="auth-brand-sub">Track and manage student attendance across all your sections with live updates via Socket.IO.</p>
-    <div class="auth-brand-deco">
-      <div class="auth-brand-deco-card"></div>
-      <div class="auth-brand-deco-card"></div>
-      <div class="auth-brand-deco-card"></div>
-      <div class="auth-brand-deco-card"></div>
+    <div class="auth-brand-features">
+      <div class="auth-brand-feature">
+        <div class="auth-brand-feature-icon"><i class="fa-solid fa-bolt"></i></div>
+        <div>
+          <div class="auth-brand-feature-title">Real-time Updates</div>
+          <div class="auth-brand-feature-desc">Attendance marks appear instantly for professors and students simultaneously.</div>
+        </div>
+      </div>
+      <div class="auth-brand-feature">
+        <div class="auth-brand-feature-icon"><i class="fa-solid fa-key"></i></div>
+        <div>
+          <div class="auth-brand-feature-title">Join Code Enrollment</div>
+          <div class="auth-brand-feature-desc">Students join sections with a simple 6-character code — no manual setup needed.</div>
+        </div>
+      </div>
+      <div class="auth-brand-feature">
+        <div class="auth-brand-feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div>
+          <div class="auth-brand-feature-title">Auto-Mark & Override</div>
+          <div class="auth-brand-feature-desc">Expired sessions auto-close, and professors can manually override any record.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -36,7 +53,7 @@
       <div class="auth-logo">
         <div class="auth-logo-mark-row">
           <div class="sidebar-logo-mark" style="width:28px;height:28px;font-size:13px;"><i class="fa-solid fa-clipboard-check"></i></div>
-          <span style="font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text-primary);">ClareTrack Pro</span>
+          <span style="font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text-primary);letter-spacing:-0.3px;">ClareTrack Pro</span>
           <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" style="margin-left:auto;">
             <i class="fa-solid fa-moon" id="theme-icon"></i>
           </button>
@@ -45,19 +62,19 @@
       <h1 class="auth-title">Welcome back</h1>
       <p class="auth-sub">Sign in to your account to continue.</p>
 
-      <form id="login-form" novalidate>
+      <form id="login-form" novalidate autocomplete="off">
         <div class="form-group">
           <label class="form-label" for="email">Email Address</label>
           <div class="input-with-icon">
             <i class="fa-solid fa-envelope"></i>
-            <input class="form-input" type="email" id="email" name="email" required autocomplete="email" placeholder="you@claretrack.edu">
+            <input class="form-input" type="email" id="email" name="email" required autocomplete="off" placeholder="you@claretrack.edu">
           </div>
         </div>
         <div class="form-group">
           <label class="form-label" for="password">Password</label>
           <div class="input-with-icon">
             <i class="fa-solid fa-lock"></i>
-            <input class="form-input" type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+            <input class="form-input" type="password" id="password" name="password" required autocomplete="new-password" placeholder="••••••••">
           </div>
           <div id="login-error" class="form-error" hidden></div>
         </div>

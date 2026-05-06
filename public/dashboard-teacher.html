@@ -40,6 +40,10 @@
       <button class="sidebar-link" id="nav-history" onclick="switchPanel('history')">
         <i class="fa-solid fa-clock-rotate-left"></i> Session History
       </button>
+      <button class="sidebar-link" id="nav-requests" onclick="switchPanel('requests')" style="position:relative;">
+        <i class="fa-solid fa-user-clock"></i> Join Requests
+        <span class="requests-badge hidden" id="requests-badge"></span>
+      </button>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user">
@@ -128,6 +132,16 @@
           <div class="table-wrap" id="students-table-wrap">
             <div class="loading-center"><div class="spinner"></div></div>
           </div>
+        </div>
+      </div>
+
+      <!-- ── JOIN REQUESTS PANEL ── -->
+      <div id="panel-requests" class="hidden">
+        <div class="page-title-row">
+          <h2 style="font-family:var(--font-display);"><i class="fa-solid fa-user-clock" style="margin-right:8px;color:var(--accent);"></i>Join Requests</h2>
+        </div>
+        <div id="requests-list">
+          <div class="loading-center"><div class="spinner"></div></div>
         </div>
       </div>
 

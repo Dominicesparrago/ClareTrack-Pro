@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { DateTime } = require('luxon');
+const XLSX = require('xlsx');
 const db = require('../db');
 const { requireAuth, requireRole } = require('./auth');
 
@@ -327,6 +328,61 @@ router.get('/export/:sessionId', ...adminOnly, (req, res) => {
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(lines.join('\r\n'));
+});
+
+router.get('/export/:sessionId/xlsx', ...adminOnly, (req, res) => {
+  const { sessionId } = req.params;
+
+  const session = db.prepare(`
+    SELECT asn.id, asn.created_at,
+           sec.name  AS section_name,
+           sub.code  AS subject_code, sub.name AS subject_name,
+           sub.time_start, sub.time_end, sub.days,
+           u.name    AS professor_name
+    FROM attendance_sessions asn
+    JOIN sections sec ON sec.id = asn.section_id
+    JOIN subjects sub ON sub.id = sec.subject_id
+    JOIN users u ON u.id = sub.teacher_id
+    WHERE asn.id = ?
+  `).get(sessionId);
+
+  if (!session) return res.status(404).json({ error: 'Session not found' });
+
+  const records = db.prepare(`
+    SELECT u.name, u.email, ar.status, ar.is_manual, ar.reason, ar.timestamp
+    FROM attendance_records ar
+    JOIN users u ON u.id = ar.student_id
+    WHERE ar.session_id = ?
+    ORDER BY u.name ASC
+  `).all(sessionId);
+
+  const rows = records.map(r => ({
+    'Subject Code':    session.subject_code,
+    'Subject Name':    session.subject_name,
+    'Professor':       session.professor_name,
+    'Section':         session.section_name,
+    'Session Date':    session.created_at.substring(0, 10),
+    'Schedule':        `${session.time_start} – ${session.time_end}`,
+    'Days':            session.days,
+    'Student Name':    r.name,
+    'Email':           r.email,
+    'Status':          r.status,
+    'Manual Override': r.is_manual ? 'Yes' : 'No',
+    'Reason':          r.reason || '',
+    'Marked At':       r.timestamp || ''
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+
+  const filename = `${session.subject_code}_${session.section_name}_${session.created_at.substring(0,10)}.xlsx`
+    .replace(/[^a-zA-Z0-9_\-.]/g, '_');
+
+  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buf);
 });
 
 // ===== STATS =====

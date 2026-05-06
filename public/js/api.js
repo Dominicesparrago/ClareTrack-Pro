@@ -32,6 +32,9 @@ const API = {
 
   downloadCSV(sessionId) {
     window.location.href = `/api/admin/export/${sessionId}`;
+  },
+  downloadExcel(sessionId) {
+    window.location.href = `/api/admin/export/${sessionId}/xlsx`;
   }
 };
 
