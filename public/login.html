@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — ClareTrack Pro</title>
+  <script>(function(){const t=localStorage.getItem('claretrack-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})()</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&family=JetBrains+Mono&display=swap">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="auth-shell">
+  <!-- Left brand panel -->
+  <div class="auth-brand">
+    <div class="auth-brand-logo">
+      <div class="sidebar-logo-mark"><i class="fa-solid fa-clipboard-check"></i></div>
+      <span class="auth-brand-logo-text">ClareTrack Pro</span>
+    </div>
+    <p class="auth-brand-tagline">Real-time attendance,<br>redefined.</p>
+    <p class="auth-brand-sub">Track and manage student attendance across all your sections with live updates via Socket.IO.</p>
+    <div class="auth-brand-deco">
+      <div class="auth-brand-deco-card"></div>
+      <div class="auth-brand-deco-card"></div>
+      <div class="auth-brand-deco-card"></div>
+      <div class="auth-brand-deco-card"></div>
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="auth-form-panel">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-mark-row">
+          <div class="sidebar-logo-mark" style="width:28px;height:28px;font-size:13px;"><i class="fa-solid fa-clipboard-check"></i></div>
+          <span style="font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text-primary);">ClareTrack Pro</span>
+          <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" style="margin-left:auto;">
+            <i class="fa-solid fa-moon" id="theme-icon"></i>
+          </button>
+        </div>
+      </div>
+      <h1 class="auth-title">Welcome back</h1>
+      <p class="auth-sub">Sign in to your account to continue.</p>
+
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-envelope"></i>
+            <input class="form-input" type="email" id="email" name="email" required autocomplete="email" placeholder="you@claretrack.edu">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-lock"></i>
+            <input class="form-input" type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+          </div>
+          <div id="login-error" class="form-error" hidden></div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top:8px;">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In
+        </button>
+      </form>
+      <p class="auth-footer">New student? <a href="/signup.html">Create account</a></p>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+</body>
+</html>

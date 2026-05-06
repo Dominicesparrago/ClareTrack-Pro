@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard — ClareTrack Pro</title>
+  <script>(function(){const t=localStorage.getItem('claretrack-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})()</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&family=JetBrains+Mono&display=swap">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark"><i class="fa-solid fa-clipboard-check"></i></div>
+      <div>
+        <div class="sidebar-logo-text">ClareTrack Pro</div>
+        <div class="sidebar-logo-sub">Student Portal</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Navigation</div>
+      <button class="sidebar-link active" id="nav-sections" onclick="showPanel('sections')">
+        <i class="fa-solid fa-layer-group"></i> My Sections
+      </button>
+      <button class="sidebar-link" id="nav-history" onclick="showPanel('history')">
+        <i class="fa-solid fa-clock-rotate-left"></i> Attendance History
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="nav-avatar">S</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="nav-user-name">Student</div>
+          <div class="sidebar-user-role">Student</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" onclick="logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main-content">
+    <!-- Top nav -->
+    <div class="topnav">
+      <button class="menu-toggle" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+      <span class="topnav-title">Student Dashboard</span>
+      <div class="topnav-actions">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+          <i class="fa-solid fa-moon" id="theme-icon"></i>
+        </button>
+        <span id="nav-user-name-header" style="font-size:13px;color:var(--text-muted);margin-left:4px;"></span>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <!-- Notification permission prompt (shown if permission = 'default') -->
+      <div id="notif-prompt" class="notif-prompt hidden">
+        <i class="fa-solid fa-bell"></i>
+        <span class="prompt-text">Enable browser notifications to get alerted when attendance opens.</span>
+        <button class="btn btn-primary btn-sm" onclick="requestNotifPermission()">Enable</button>
+        <button class="btn btn-ghost btn-sm" onclick="dismissNotifPrompt()">Dismiss</button>
+      </div>
+
+      <!-- Attendance open banner -->
+      <div id="attendance-banner" class="attendance-banner hidden">
+        <i class="fa-solid fa-bell banner-icon"></i>
+        <div class="banner-body">
+          <div class="banner-title" id="banner-title">Attendance is now open!</div>
+          <div class="banner-sub" id="banner-sub">Mark your attendance now before the session closes.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="banner-mark-btn">
+          <i class="fa-solid fa-circle-check"></i> Mark Present
+        </button>
+      </div>
+
+      <!-- ── SECTIONS PANEL ── -->
+      <div id="panel-sections">
+        <!-- Attendance summary stats -->
+        <div id="student-stats" class="grid-stats" style="margin-bottom:20px;"></div>
+
+        <div class="page-title-row">
+          <h2 style="font-family:var(--font-display);">My Sections</h2>
+        </div>
+
+        <!-- Join a section -->
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <i class="fa-solid fa-door-open" style="color:var(--accent);font-size:16px;"></i>
+            <span style="font-family:var(--font-display);font-size:15px;font-weight:600;">Join a Section</span>
+          </div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Enter the 6-character join code provided by your professor to enroll in a section.</p>
+          <div class="join-section-form">
+            <div class="form-group">
+              <input class="form-input" type="text" id="join-code-input"
+                placeholder="e.g. ABC123" maxlength="6"
+                style="text-transform:uppercase;letter-spacing:0.2em;font-family:var(--font-mono);font-size:15px;">
+            </div>
+            <button class="btn btn-primary" onclick="joinSection_()">
+              <i class="fa-solid fa-door-open"></i> Join
+            </button>
+          </div>
+          <div id="join-error" class="form-error" hidden></div>
+        </div>
+
+        <!-- Sections grid -->
+        <div id="sections-grid" class="sections-grid">
+          <div class="loading-center" style="grid-column:1/-1;"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ── HISTORY PANEL ── -->
+      <div id="panel-history" class="hidden">
+        <div class="page-title-row" style="margin-bottom:14px;">
+          <h2 style="font-family:var(--font-display);">
+            <i class="fa-solid fa-clock-rotate-left" style="margin-right:8px;color:var(--accent);"></i>Attendance History
+          </h2>
+          <div class="view-toggle">
+            <button class="btn btn-sm view-btn active" id="view-list-btn" onclick="setHistoryView('list')" title="List view">
+              <i class="fa-solid fa-list"></i> List
+            </button>
+            <button class="btn btn-sm view-btn" id="view-cal-btn" onclick="setHistoryView('calendar')" title="Calendar view">
+              <i class="fa-solid fa-calendar-week"></i> Calendar
+            </button>
+          </div>
+        </div>
+
+        <!-- Toolbar: subject filter + week nav -->
+        <div class="toolbar" style="margin-bottom:18px;">
+          <select class="form-input form-select filter-select" id="history-subject-filter" onchange="loadHistory()" style="max-width:260px;">
+            <option value="">All Subjects</option>
+          </select>
+          <div class="week-nav hidden" id="week-nav">
+            <button class="btn btn-ghost btn-sm" onclick="changeWeek(-1)" title="Previous week">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="week-label" id="week-label">Loading…</span>
+            <button class="btn btn-ghost btn-sm" onclick="changeWeek(1)" title="Next week">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="history-content">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+    </div><!-- /.content-area -->
+  </div><!-- /.main-content -->
+</div><!-- /.app-shell -->
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/socket-client.js"></script>
+<script src="/js/student.js"></script>
+</body>
+</html>

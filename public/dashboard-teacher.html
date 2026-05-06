@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professor Dashboard — ClareTrack Pro</title>
+  <script>(function(){const t=localStorage.getItem('claretrack-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})()</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&family=JetBrains+Mono&display=swap">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark"><i class="fa-solid fa-clipboard-check"></i></div>
+      <div>
+        <div class="sidebar-logo-text">ClareTrack Pro</div>
+        <div class="sidebar-logo-sub">Professor Portal</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Attendance</div>
+      <button class="sidebar-link active" id="nav-today" onclick="switchPanel('today')">
+        <i class="fa-solid fa-calendar-days"></i> Today's Classes
+      </button>
+      <button class="sidebar-link" id="nav-all" onclick="switchPanel('all')">
+        <i class="fa-solid fa-book"></i> All Subjects
+      </button>
+      <div class="sidebar-section-label" style="margin-top:12px;">Insights</div>
+      <button class="sidebar-link" id="nav-students" onclick="switchPanel('students')">
+        <i class="fa-solid fa-users"></i> Students
+      </button>
+      <button class="sidebar-link" id="nav-history" onclick="switchPanel('history')">
+        <i class="fa-solid fa-clock-rotate-left"></i> Session History
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="nav-avatar">P</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="nav-user-name">Professor</div>
+          <div class="sidebar-user-role">Professor</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" onclick="logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main-content">
+    <!-- Top nav -->
+    <div class="topnav">
+      <button class="menu-toggle" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+      <span class="topnav-title" id="topnav-title">Professor Dashboard</span>
+      <div class="topnav-actions">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+          <i class="fa-solid fa-moon" id="theme-icon"></i>
+        </button>
+        <span id="nav-user-name-header" style="font-size:13px;color:var(--text-muted);margin-left:4px;"></span>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <!-- ── TODAY'S CLASSES PANEL ── -->
+      <div id="panel-today">
+        <!-- Today's summary stats -->
+        <div id="today-stats" class="grid-stats" style="margin-bottom:20px;"></div>
+
+        <div class="teacher-layout">
+          <!-- Left: subject list -->
+          <div class="teacher-sidebar">
+            <div class="teacher-sidebar-header" id="subjects-header">Today's Classes</div>
+            <div id="subjects-list">
+              <div class="loading-center"><div class="spinner"></div></div>
+            </div>
+          </div>
+          <!-- Right: session panel -->
+          <div class="teacher-main" id="teacher-main">
+            <div class="session-placeholder" id="session-placeholder">
+              <i class="fa-solid fa-clipboard-check"></i>
+              <div class="session-placeholder__text">No Class Selected</div>
+              <div class="session-placeholder__sub">Select a class from the left to manage attendance.</div>
+            </div>
+            <div id="session-panel" class="hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ALL SUBJECTS PANEL ── -->
+      <div id="panel-all" class="hidden">
+        <div class="page-title-row">
+          <h2 style="font-family:var(--font-display);"><i class="fa-solid fa-book" style="margin-right:8px;color:var(--accent);"></i>All Subjects</h2>
+        </div>
+        <div id="all-subjects-list">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ── STUDENTS PANEL ── -->
+      <div id="panel-students" class="hidden">
+        <div class="page-title-row">
+          <h2 style="font-family:var(--font-display);"><i class="fa-solid fa-users" style="margin-right:8px;color:var(--accent);"></i>Students</h2>
+        </div>
+        <!-- Filter toolbar -->
+        <div class="toolbar">
+          <select class="form-input form-select filter-select" id="students-subject-filter" onchange="onStudentFilterChange()">
+            <option value="">All Subjects</option>
+          </select>
+          <select class="form-input form-select filter-select" id="students-section-filter" onchange="loadStudentsPanel()" style="min-width:140px;">
+            <option value="">All Sections</option>
+          </select>
+          <div class="input-with-icon search-input">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input class="form-input" type="text" id="students-search" placeholder="Search by name…" oninput="filterStudentsTable()">
+          </div>
+        </div>
+        <div class="card" style="padding:0;">
+          <div class="table-wrap" id="students-table-wrap">
+            <div class="loading-center"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SESSION HISTORY PANEL ── -->
+      <div id="panel-history" class="hidden">
+        <div class="page-title-row">
+          <h2 style="font-family:var(--font-display);"><i class="fa-solid fa-clock-rotate-left" style="margin-right:8px;color:var(--accent);"></i>Session History</h2>
+        </div>
+        <div class="card" style="padding:0;">
+          <div class="table-wrap" id="history-table-wrap">
+            <div class="loading-center"><div class="spinner"></div></div>
+          </div>
+        </div>
+        <!-- Roster sub-section -->
+        <div id="history-roster-section" class="hidden" style="margin-top:20px;">
+          <div class="page-title-row">
+            <h3 style="font-family:var(--font-display);" id="history-roster-title">Session Roster</h3>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('history-roster-section').classList.add('hidden')">
+              <i class="fa-solid fa-xmark"></i> Close
+            </button>
+          </div>
+          <div class="card" style="padding:0;">
+            <div class="table-wrap" id="history-roster-wrap"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.content-area -->
+  </div><!-- /.main-content -->
+</div><!-- /.app-shell -->
+
+<!-- Student Detail Drawer -->
+<div class="drawer-overlay" id="student-drawer-overlay" onclick="closeStudentDrawer()">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-header">
+      <span class="drawer-title" id="drawer-student-name">Student Detail</span>
+      <button class="modal-close" onclick="closeStudentDrawer()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-body" id="drawer-body">
+      <div class="loading-center"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Override Modal -->
+<div class="modal-overlay" id="override-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Override Attendance</h3>
+      <button class="modal-close" onclick="closeOverrideModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="override-session-id">
+      <input type="hidden" id="override-student-id">
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">
+        Manually set attendance for <strong id="override-student-name" style="color:var(--text-primary);"></strong>.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Attendance Status</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="override-status" value="PRESENT">
+            <i class="fa-solid fa-circle-check" style="color:var(--status-present-text);"></i> Present
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="override-status" value="ABSENT">
+            <i class="fa-solid fa-circle-xmark" style="color:var(--status-absent-text);"></i> Absent
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason <span style="color:var(--status-absent-text)">*</span></label>
+        <textarea class="form-input form-textarea" id="override-reason" rows="3" placeholder="Provide a reason (minimum 5 characters)…" maxlength="500"></textarea>
+        <div id="override-error" class="form-error" hidden></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeOverrideModal()">Cancel</button>
+      <button class="btn btn-primary" id="override-submit-btn" onclick="submitOverride()">
+        <i class="fa-solid fa-pen-to-square"></i> Confirm Override
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Finalize Confirmation Modal -->
+<div class="modal-overlay" id="finalize-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-lock" style="color:var(--status-absent-text);margin-right:8px;"></i>Finalize Session</h3>
+      <button class="modal-close" onclick="closeFinalizeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:12px;color:var(--text-secondary);">Are you sure you want to finalize this attendance session?</p>
+      <div class="session-expired-notice">
+        <i class="fa-solid fa-triangle-exclamation" style="margin-right:6px;"></i>
+        All students still marked <strong>Pending</strong> will be automatically marked <strong>Absent</strong>. This action <strong>cannot be undone</strong>.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeFinalizeModal()">Cancel</button>
+      <button class="btn btn-danger" id="finalize-confirm-btn" onclick="confirmFinalize()">
+        <i class="fa-solid fa-lock"></i> Finalize Session
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/socket-client.js"></script>
+<script src="/js/teacher.js"></script>
+</body>
+</html>

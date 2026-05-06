@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — ClareTrack Pro</title>
+  <script>(function(){const t=localStorage.getItem('claretrack-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})()</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&family=JetBrains+Mono&display=swap">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Use legacy .layout so admin.js sidebar toggle works unchanged -->
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-logo-mark" style="margin-right:10px;"><i class="fa-solid fa-clipboard-check"></i></div>
+      <div>
+        <div class="sidebar-logo-text">ClareTrack Pro</div>
+        <div class="sidebar-logo-sub">Administrator</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Management</div>
+      <button class="sidebar-link" data-panel="overview"    onclick="showPanel('overview')">
+        <i class="fa-solid fa-house"></i> Overview
+      </button>
+      <button class="sidebar-link" data-panel="users"       onclick="showPanel('users')">
+        <i class="fa-solid fa-users"></i> Users
+      </button>
+      <button class="sidebar-link" data-panel="subjects"    onclick="showPanel('subjects')">
+        <i class="fa-solid fa-book"></i> Subjects
+      </button>
+      <button class="sidebar-link" data-panel="sections"    onclick="showPanel('sections')">
+        <i class="fa-solid fa-layer-group"></i> Sections
+      </button>
+      <button class="sidebar-link" data-panel="enrollments" onclick="showPanel('enrollments')">
+        <i class="fa-solid fa-clipboard-list"></i> Enrollments
+      </button>
+      <div class="sidebar-section-label" style="margin-top:12px;">Reports</div>
+      <button class="sidebar-link" data-panel="sessions"    onclick="showPanel('sessions')">
+        <i class="fa-solid fa-calendar-days"></i> Sessions
+      </button>
+      <button class="sidebar-link" data-panel="auditlogs"   onclick="showPanel('auditlogs')">
+        <i class="fa-solid fa-clock-rotate-left"></i> Audit Logs
+      </button>
+      <button class="sidebar-link" data-panel="export"      onclick="showPanel('export')">
+        <i class="fa-solid fa-file-arrow-down"></i> Export CSV
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="nav-avatar">A</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="nav-user-name">Admin</div>
+          <div class="sidebar-user-role">Administrator</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" onclick="logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Header -->
+  <header class="header">
+    <button class="menu-toggle" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+    <span class="header-title">Administrator Dashboard</span>
+    <div class="header-actions">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <i class="fa-solid fa-moon" id="theme-icon"></i>
+      </button>
+      <span id="nav-user-name-header" style="font-size:13px;color:var(--text-muted);"></span>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main-content">
+
+    <!-- Overview Panel -->
+    <div id="panel-overview" class="panel">
+      <div class="page-title-row">
+        <h2><i class="fa-solid fa-house" style="margin-right:8px;color:var(--accent);"></i>System Overview</h2>
+      </div>
+      <div id="stats-grid" class="grid-stats">
+        <div class="loading-center" style="grid-column:1/-1;"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Users Panel -->
+    <div id="panel-users" class="panel">
+      <div class="page-title-row">
+        <h2><i class="fa-solid fa-users" style="margin-right:8px;color:var(--accent);"></i>Users</h2>
+        <button class="btn btn-primary" onclick="openUserModal()">
+          <i class="fa-solid fa-plus"></i> Add Professor / Admin
+        </button>
+      </div>
+      <div class="card" style="padding:0;">
+        <div class="table-wrap" id="users-table-wrap">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subjects Panel -->
+    <div id="panel-subjects" class="panel">
+      <div class="page-title-row">
+        <h2><i class="fa-solid fa-book" style="margin-right:8px;color:var(--accent);"></i>Subjects</h2>
+        <button class="btn btn-primary" onclick="openSubjectModal()">
+          <i class="fa-solid fa-plus"></i> Add Subject
+        </button>
+      </div>
+      <div class="card" style="padding:0;">
+        <div class="table-wrap" id="subjects-table-wrap">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sections Panel -->
+    <div id="panel-sections" class="panel">
+      <div class="page-title-row">
+        <h2><i class="fa-solid fa-layer-group" style="margin-right:8px;color:var(--accent);"></i>Sections</h2>
+        <button class="btn btn-primary" onclick="openSectionModal()">
+          <i class="fa-solid fa-plus"></i> Add Section
+        </button>
+      </div>
+      <div class="card" style="padding:0;">
+        <div class="table-wrap" id="sections-table-wrap">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enrollments Panel -->
+    <div id="panel-enrollments" class="panel">
+      <div class="page-title-row">
+        <h2><i class="fa-solid fa-clipboard-list" style="margin-right:8px;color:var(--accent);"></i>Enrollments</h2>
+        <button class="btn btn-primary" onclick="openEnrollmentModal()">
+          <i class="fa-solid fa-plus"></i> Add Enrollment
+        </button>
+      </div>
+      <div class="card" style="padding:0;">
+        <div class="table-wrap" id="enrollments-table-wrap">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessions Panel -->
+    <div id="panel-sessions" class="panel">
+      <div class="page-title-row">
+        <h2><i class="fa-solid fa-calendar-days" style="margin-right:8px;color:var(--accent);"></i>Attendance Sessions</h2>
+      </div>
+      <div class="card" style="padding:0;" id="sessions-list-card">
+        <div class="table-wrap" id="sessions-table-wrap">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+      <div id="session-roster-section" class="hidden" style="margin-top:20px;">
+        <div class="page-title-row">
+          <h3 id="roster-title" style="font-family:var(--font-display);">Session Roster</h3>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('session-roster-section').classList.add('hidden')">
+            <i class="fa-solid fa-xmark"></i> Close
+          </button>
+        </div>
+        <div class="card" style="padding:0;">
+          <div class="table-wrap" id="session-roster-wrap"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Logs Panel -->
+    <div id="panel-auditlogs" class="panel">
+      <div class="page-title-row">
+        <h2><i class="fa-solid fa-clock-rotate-left" style="margin-right:8px;color:var(--accent);"></i>Audit Logs</h2>
+      </div>
+      <div class="card" style="padding:0;">
+        <div class="table-wrap" id="audit-table-wrap">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+      <div id="audit-pagination" class="pagination"></div>
+    </div>
+
+    <!-- Export Panel -->
+    <div id="panel-export" class="panel">
+      <div class="page-title-row">
+        <h2><i class="fa-solid fa-file-arrow-down" style="margin-right:8px;color:var(--accent);"></i>Export Attendance CSV</h2>
+      </div>
+      <div class="card" style="max-width:480px;">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px;">
+          Select a session to download its full attendance record as a CSV file.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="export-session-select">
+            <i class="fa-solid fa-calendar-days" style="margin-right:6px;"></i>Select Session
+          </label>
+          <select class="form-input form-select" id="export-session-select">
+            <option value="">— Choose a session —</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="downloadExport()">
+          <i class="fa-solid fa-file-arrow-down"></i> Download CSV
+        </button>
+        <div id="export-error" class="form-error" hidden></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- User Modal -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="user-modal-title">Add User</h3>
+      <button class="modal-close" onclick="closeModal('user-modal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="user-modal-id">
+      <div class="form-group">
+        <label class="form-label">Full Name <span style="color:var(--status-absent-text)">*</span></label>
+        <input class="form-input" type="text" id="user-name" placeholder="Prof. Juan dela Cruz">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address <span style="color:var(--status-absent-text)">*</span></label>
+        <input class="form-input" type="email" id="user-email" placeholder="prof@claretrack.edu">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="user-password-label">Password <span style="color:var(--status-absent-text)">*</span></label>
+        <input class="form-input" type="password" id="user-password" placeholder="Minimum 8 characters">
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;" id="user-password-hint"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role <span style="color:var(--status-absent-text)">*</span></label>
+        <select class="form-input form-select" id="user-role">
+          <option value="TEACHER">Professor</option>
+          <option value="ADMIN">Administrator</option>
+        </select>
+      </div>
+      <div id="user-modal-error" class="form-error" hidden></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('user-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUser()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Subject Modal -->
+<div class="modal-overlay" id="subject-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="subject-modal-title">Add Subject</h3>
+      <button class="modal-close" onclick="closeModal('subject-modal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="subject-modal-id">
+      <div class="form-group">
+        <label class="form-label">Subject Code <span style="color:var(--status-absent-text)">*</span></label>
+        <input class="form-input" type="text" id="subject-code" placeholder="CC105">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Name <span style="color:var(--status-absent-text)">*</span></label>
+        <input class="form-input" type="text" id="subject-name" placeholder="Computer Programming 1">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Start Time</label>
+          <input class="form-input" type="time" id="subject-time-start" value="08:00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Time</label>
+          <input class="form-input" type="time" id="subject-time-end" value="09:00">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Days <span style="font-weight:400;color:var(--text-muted);">(e.g. MON,WED,FRI)</span></label>
+        <input class="form-input" type="text" id="subject-days" placeholder="MON,WED,FRI">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Professor <span style="color:var(--status-absent-text)">*</span></label>
+        <select class="form-input form-select" id="subject-teacher">
+          <option value="">— Select Professor —</option>
+        </select>
+      </div>
+      <div id="subject-modal-error" class="form-error" hidden></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('subject-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSubject()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Section Modal -->
+<div class="modal-overlay" id="section-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Add Section</h3>
+      <button class="modal-close" onclick="closeModal('section-modal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Subject <span style="color:var(--status-absent-text)">*</span></label>
+        <select class="form-input form-select" id="section-subject">
+          <option value="">— Select Subject —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Section Name <span style="color:var(--status-absent-text)">*</span></label>
+        <input class="form-input" type="text" id="section-name" placeholder="Section A">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Join Code <span style="font-weight:400;color:var(--text-muted);">(leave blank to auto-generate)</span></label>
+        <input class="form-input" type="text" id="section-join-code" maxlength="6" style="text-transform:uppercase;letter-spacing:0.2em;font-family:var(--font-mono);" placeholder="AUTO">
+      </div>
+      <div id="section-modal-error" class="form-error" hidden></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('section-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSection()"><i class="fa-solid fa-plus"></i> Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Enrollment Modal -->
+<div class="modal-overlay" id="enrollment-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Add Enrollment</h3>
+      <button class="modal-close" onclick="closeModal('enrollment-modal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Student <span style="color:var(--status-absent-text)">*</span></label>
+        <select class="form-input form-select" id="enroll-student">
+          <option value="">— Select Student —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Section <span style="color:var(--status-absent-text)">*</span></label>
+        <select class="form-input form-select" id="enroll-section">
+          <option value="">— Select Section —</option>
+        </select>
+      </div>
+      <div id="enrollment-modal-error" class="form-error" hidden></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('enrollment-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEnrollment()"><i class="fa-solid fa-plus"></i> Enroll</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>
